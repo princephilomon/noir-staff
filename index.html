@@ -77,6 +77,10 @@
         <div class="title">Floor</div>
         <div class="desc">Ready to serve → payment</div>
       </a>
+      <a class="tile" id="analytics-link" href="analytics.html">
+        <div class="title">Analytics</div>
+        <div class="desc">Orders, guests, payments</div>
+      </a>
       <button class="tile logout-btn" id="logout-btn" type="button">Log out</button>
     </div>
   </div>
@@ -105,6 +109,7 @@ function showStationLinks(access){
   infoLine.textContent = `Code accepted — ${roleText}.`;
   kitchenLink.classList.toggle('hidden', access.role === 'floor');
   floorLink.classList.toggle('hidden', access.role === 'kitchen');
+  document.getElementById('analytics-link').classList.toggle('hidden', access.role !== 'all');
 }
 
 function clearLogin(){

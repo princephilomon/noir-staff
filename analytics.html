@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Noir — Analytics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0E13;
+    --panel:#141B22;
+    --teal:#2DD4BF;
+    --teal-deep:#1F9D8F;
+    --amber:#F2B84B;
+    --ink:#E8ECEF;
+    --ink-dim:#8A96A0;
+    --line: rgba(125,216,208,0.14);
+    --red:#E0746C;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:'Inter', sans-serif; min-height:100vh;
+  }
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:20px 24px; border-bottom:1px solid var(--line);
+    position:sticky; top:0; background:rgba(10,14,19,0.92); backdrop-filter:blur(10px);
+    z-index:10;
+  }
+  header h1{
+    font-family:'Fraunces', serif; font-weight:600; font-size:22px; margin:0;
+  }
+  header a{
+    color:var(--teal); text-decoration:none; font-size:13px; padding:8px 14px;
+    border:1px solid var(--line); border-radius:8px; cursor:pointer;
+  }
+  main{ padding:24px; max-width:1200px; margin:0 auto; }
+  
+  .grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:18px; margin-bottom:30px; }
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    padding:20px; text-align:center;
+  }
+  .card-title{ font-size:12.5px; color:var(--ink-dim); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:10px; }
+  .card-value{ font-family:'Fraunces', serif; font-size:36px; font-weight:600; color:var(--teal); margin:0; }
+  .card-meta{ font-size:12px; color:var(--ink-dim); margin-top:8px; }
+  
+  .section{ margin-bottom:36px; }
+  .section-title{ font-family:'Fraunces', serif; font-size:20px; font-weight:600; margin:0 0 16px; }
+  
+  .breakdown{
+    background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    padding:18px; display:flex; flex-direction:column; gap:14px;
+  }
+  .breakdown-row{
+    display:flex; justify-content:space-between; align-items:center; padding:10px 0;
+    border-bottom:1px solid rgba(255,255,255,0.04);
+  }
+  .breakdown-row:last-child{ border-bottom:none; }
+  .breakdown-label{ font-size:13.5px; }
+  .breakdown-value{ font-weight:700; color:var(--teal); font-size:14px; }
+  .breakdown-percent{ font-size:11px; color:var(--ink-dim); }
+  
+  .status-dot{ width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px; }
+  .dot-placed{ background:var(--amber); }
+  .dot-preparing{ background:var(--teal); }
+  .dot-ready{ background:var(--teal-deep); }
+  .dot-served{ background:#7DD8D0; }
+  .dot-paid{ background:#4ADE80; }
+  
+  .refresh-btn{
+    background:var(--teal); color:#06201C; border:none; border-radius:8px;
+    padding:8px 14px; font-weight:600; font-size:12px; cursor:pointer;
+    transition:all 0.2s ease;
+  }
+  .refresh-btn:hover{ background:var(--teal-deep); }
+  
+  .loading{ text-align:center; padding:40px 20px; color:var(--ink-dim); }
+  .error{ padding:20px; background:rgba(224,116,108,0.1); border:1px solid var(--red); border-radius:10px; color:var(--red); margin:20px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Noir — Analytics</h1>
+  <div>
+    <button class="refresh-btn" id="refresh-btn">Refresh</button>
+    <a href="index.html">Back</a>
+  </div>
+</header>
+
+<main>
+  <div id="error-msg" class="error" style="display:none;"></div>
+  <div id="loading" class="loading">Loading analytics…</div>
+  
+  <div id="content" style="display:none;">
+    <!-- Key Metrics -->
+    <div class="grid">
+      <div class="card">
+        <div class="card-title">Total Orders</div>
+        <p class="card-value" id="total-orders">0</p>
+        <div class="card-meta">all time</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Unique Guests</div>
+        <p class="card-value" id="unique-guests">0</p>
+        <div class="card-meta">people who ordered</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Revenue</div>
+        <p class="card-value" id="total-revenue">$0.00</p>
+        <div class="card-meta">from paid orders</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Avg Order Value</div>
+        <p class="card-value" id="avg-order">$0.00</p>
+        <div class="card-meta">per order</div>
+      </div>
+    </div>
+
+    <!-- Order Status -->
+    <div class="section">
+      <h2 class="section-title">Order Status</h2>
+      <div class="breakdown" id="status-breakdown"></div>
+    </div>
+
+    <!-- Payment Methods -->
+    <div class="section">
+      <h2 class="section-title">Payment Methods</h2>
+      <div class="breakdown" id="payment-breakdown"></div>
+    </div>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script src="auth.js"></script>
+<script>
+requireAccess('all');
+const isConfigured = SUPABASE_URL.startsWith('http');
+const sb = isConfigured ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+const loadingEl = document.getElementById('loading');
+const contentEl = document.getElementById('content');
+const errorEl = document.getElementById('error-msg');
+const refreshBtn = document.getElementById('refresh-btn');
+
+async function loadAnalytics(){
+  if (!sb){
+    errorEl.textContent = 'Not configured. Edit config.js.';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  try {
+    loadingEl.style.display = 'block';
+    contentEl.style.display = 'none';
+    errorEl.style.display = 'none';
+
+    // Fetch all orders
+    const { data: orders, error } = await sb.from('orders').select('*');
+    if (error) throw error;
+    if (!orders || orders.length === 0){
+      document.getElementById('total-orders').textContent = '0';
+      document.getElementById('unique-guests').textContent = '0';
+      loadingEl.textContent = 'No orders yet.';
+      return;
+    }
+
+    // Calculate metrics
+    const totalOrders = orders.length;
+    const uniqueGuests = new Set(orders.map(o => o.guest_name)).size;
+    const paidOrders = orders.filter(o => o.status === 'paid');
+    const totalRevenue = paidOrders.reduce((sum, o) => sum + parseFloat(o.total || 0), 0);
+    const avgOrder = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+    document.getElementById('total-orders').textContent = totalOrders.toLocaleString();
+    document.getElementById('unique-guests').textContent = uniqueGuests.toLocaleString();
+    document.getElementById('total-revenue').textContent = `$${totalRevenue.toFixed(2)}`;
+    document.getElementById('avg-order').textContent = `$${avgOrder.toFixed(2)}`;
+
+    // Status breakdown
+    const statusCounts = {};
+    orders.forEach(o => {
+      statusCounts[o.status] = (statusCounts[o.status] || 0) + 1;
+    });
+    const statuses = ['placed', 'preparing', 'ready', 'served', 'paid'];
+    const statusHtml = statuses.map(status => {
+      const count = statusCounts[status] || 0;
+      const pct = totalOrders > 0 ? ((count / totalOrders) * 100).toFixed(0) : 0;
+      const dotClass = `dot-${status}`;
+      return `
+        <div class="breakdown-row">
+          <span class="breakdown-label"><span class="status-dot ${dotClass}"></span>${status.charAt(0).toUpperCase() + status.slice(1)}</span>
+          <span><span class="breakdown-value">${count}</span> <span class="breakdown-percent">${pct}%</span></span>
+        </div>
+      `;
+    }).join('');
+    document.getElementById('status-breakdown').innerHTML = statusHtml;
+
+    // Payment breakdown
+    const paymentCounts = {};
+    paidOrders.forEach(o => {
+      const method = o.payment_method || 'pending';
+      paymentCounts[method] = (paymentCounts[method] || 0) + 1;
+    });
+    const paymentMethods = ['cash', 'online', 'card', 'pending'];
+    const paymentHtml = paymentMethods.map(method => {
+      const count = paymentCounts[method] || 0;
+      const pct = paidOrders.length > 0 ? ((count / paidOrders.length) * 100).toFixed(0) : 0;
+      return count > 0 ? `
+        <div class="breakdown-row">
+          <span class="breakdown-label">${method.charAt(0).toUpperCase() + method.slice(1)}</span>
+          <span><span class="breakdown-value">${count}</span> <span class="breakdown-percent">${pct}% of paid</span></span>
+        </div>
+      ` : '';
+    }).join('');
+    document.getElementById('payment-breakdown').innerHTML = paymentHtml || '<p style="color:var(--ink-dim);">No paid orders yet.</p>';
+
+    loadingEl.style.display = 'none';
+    contentEl.style.display = 'block';
+  } catch (err) {
+    console.error(err);
+    errorEl.textContent = `Error: ${err.message}`;
+    errorEl.style.display = 'block';
+    loadingEl.style.display = 'none';
+  }
+}
+
+refreshBtn.addEventListener('click', loadAnalytics);
+loadAnalytics();
+</script>
+</body>
+</html>
