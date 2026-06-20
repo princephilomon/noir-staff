@@ -31,6 +31,23 @@ const SUPABASE_URL = "https://yourproject.supabase.co";
 const SUPABASE_ANON_KEY = "your-anon-key-here";
 ```
 
+### 5. Add staff access codes
+1. In `config.js`, set the codes staff should use.
+2. Use `ACCESS_CODES.all` for staff who can use both Kitchen and Floor.
+3. Use `ACCESS_CODES.kitchen` for kitchen-only codes.
+4. Use `ACCESS_CODES.floor` for floor-only codes.
+
+Example:
+```js
+const ACCESS_CODES = {
+  all: ['staff-1234'],
+  kitchen: ['kitchen-1234'],
+  floor: ['floor-1234'],
+};
+```
+
+Then open `index.html`, enter a valid code, and choose the allowed station.
+
 **Important:** use these exact same two values in the customer ordering repo's `config.js` too — both repos must point to the same Supabase project for orders to sync between them.
 
 ### 5. Test locally

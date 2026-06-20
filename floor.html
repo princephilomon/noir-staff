@@ -128,7 +128,9 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
+<script src="auth.js"></script>
 <script>
+requireAccess('floor');
 const isConfigured = SUPABASE_URL.startsWith('http');
 const sb = isConfigured ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 

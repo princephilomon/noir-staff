@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Noir — Staff</title>
+<title>Noir — Staff Login</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600&family=Inter:wght@500;600&display=swap" rel="stylesheet">
 <style>
@@ -18,32 +18,137 @@
   }
   .wrap{ max-width:420px; width:100%; text-align:center; }
   h1{ font-family:'Fraunces', serif; font-weight:600; font-size:30px; margin:0 0 6px; }
-  p.sub{ color:var(--ink-dim); font-size:13.5px; margin:0 0 36px; }
-  .links{ display:flex; flex-direction:column; gap:14px; }
-  a.tile{
+  p.sub{ color:var(--ink-dim); font-size:13.5px; margin:0 0 24px; }
+  .auth-card{
+    background:var(--panel); border:1px solid var(--line); border-radius:20px;
+    padding:28px 24px; box-shadow:0 16px 40px rgba(0,0,0,0.18);
+  }
+  .auth-card label{
+    display:block; text-align:left; margin-bottom:10px; font-size:13px; color:var(--ink-dim);
+  }
+  .auth-card input{
+    width:100%; padding:14px 16px; border-radius:14px; border:1px solid rgba(255,255,255,0.08);
+    background:rgba(255,255,255,0.04); color:var(--ink); font-size:15px;
+    outline:none;
+  }
+  .auth-card input:focus{ border-color:var(--teal); }
+  .auth-card button{
+    width:100%; margin-top:16px; padding:14px; border:none; border-radius:14px;
+    background:var(--teal); color:#06201C; font-weight:700; cursor:pointer; font-size:14px;
+  }
+  .help{ margin:16px 0 0; color:var(--ink-dim); font-size:13px; }
+  .error{ margin-top:14px; color:#E0746C; min-height:20px; font-size:13px; }
+  .links{ display:grid; gap:14px; margin-top:24px; }
+  .links.hidden{ display:none; }
+  .tile{
     display:block; background:var(--panel); border:1px solid var(--line);
-    border-radius:14px; padding:22px; text-decoration:none; color:var(--ink);
+    border-radius:14px; padding:20px; text-decoration:none; color:var(--ink);
     transition:all 0.2s ease;
   }
-  a.tile:active{ border-color:var(--teal-deep); background:rgba(45,212,191,0.05); }
-  a.tile .title{ font-family:'Fraunces', serif; font-weight:600; font-size:19px; margin-bottom:4px; }
-  a.tile .desc{ font-size:12.5px; color:var(--ink-dim); }
+  .tile:active{ border-color:var(--teal-deep); background:rgba(45,212,191,0.05); }
+  .tile .title{ font-family:'Fraunces', serif; font-weight:600; font-size:18px; margin-bottom:5px; }
+  .tile .desc{ font-size:13px; color:var(--ink-dim); }
+  .logout-btn{
+    margin-top:5px; background:transparent; color:var(--ink-dim); border:1px solid rgba(255,255,255,0.1);
+  }
 </style>
 </head>
 <body>
   <div class="wrap">
     <h1>Noir — Staff</h1>
-    <p class="sub">Select your station</p>
-    <div class="links">
-      <a class="tile" href="kitchen.html">
+    <p class="sub" id="subtext">Enter your access code to continue.</p>
+    <div class="auth-card" id="login-form">
+      <label for="code-input">Access code</label>
+      <input id="code-input" type="password" autocomplete="one-time-code" placeholder="Enter staff access code" />
+      <button id="login-btn" type="button">Submit</button>
+      <p class="help">Give this code only to approved staff members.</p>
+      <p class="error" id="error-text"></p>
+    </div>
+    <div class="links hidden" id="station-links">
+      <div class="tile">
+        <div class="title" id="info-line">You are logged in.</div>
+        <div class="desc">Choose the station you are allowed to access.</div>
+      </div>
+      <a class="tile" id="kitchen-link" href="kitchen.html">
         <div class="title">Kitchen</div>
         <div class="desc">New orders → preparing → ready</div>
       </a>
-      <a class="tile" href="floor.html">
+      <a class="tile" id="floor-link" href="floor.html">
         <div class="title">Floor</div>
         <div class="desc">Ready to serve → payment</div>
       </a>
+      <button class="tile logout-btn" id="logout-btn" type="button">Log out</button>
     </div>
   </div>
+
+<script src="config.js"></script>
+<script src="auth.js"></script>
+<script>
+const codeInput = document.getElementById('code-input');
+const errorText = document.getElementById('error-text');
+const loginBtn = document.getElementById('login-btn');
+const stationLinks = document.getElementById('station-links');
+const infoLine = document.getElementById('info-line');
+const kitchenLink = document.getElementById('kitchen-link');
+const floorLink = document.getElementById('floor-link');
+const logoutBtn = document.getElementById('logout-btn');
+const loginForm = document.getElementById('login-form');
+
+function showError(message){
+  errorText.textContent = message;
+}
+
+function showStationLinks(access){
+  loginForm.classList.add('hidden');
+  stationLinks.classList.remove('hidden');
+  const roleText = access.role === 'all' ? 'full staff access' : `access to ${access.role}`;
+  infoLine.textContent = `Code accepted — ${roleText}.`;
+  kitchenLink.classList.toggle('hidden', access.role === 'floor');
+  floorLink.classList.toggle('hidden', access.role === 'kitchen');
+}
+
+function clearLogin(){
+  loginForm.classList.remove('hidden');
+  stationLinks.classList.add('hidden');
+  codeInput.value = '';
+  showError('');
+}
+
+function handleLogin(){
+  const code = codeInput.value.trim();
+  const role = accessRoleForCode(code);
+  if (!role){
+    showError('Invalid access code.');
+    return;
+  }
+  saveAccess(code, role);
+  showStationLinks({ role });
+  const redirect = new URLSearchParams(window.location.search).get('redirect');
+  if (redirect && canAccessPage(role, redirect)){
+    window.location.href = redirect;
+  }
+}
+
+function handleLogout(){
+  clearAccess();
+  clearLogin();
+}
+
+function init(){
+  const saved = getSavedAccess();
+  if (saved){
+    showStationLinks(saved);
+    const redirect = new URLSearchParams(window.location.search).get('redirect');
+    if (redirect && canAccessPage(saved.role, redirect)){
+      window.location.href = redirect;
+    }
+  }
+}
+
+loginBtn.addEventListener('click', handleLogin);
+logoutBtn.addEventListener('click', handleLogout);
+codeInput.addEventListener('keypress', e => { if (e.key === 'Enter') handleLogin(); });
+init();
+</script>
 </body>
 </html>
