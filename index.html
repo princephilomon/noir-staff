@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Noir — Staff</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600&family=Inter:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0E13; --panel:#141B22; --teal:#2DD4BF; --teal-deep:#1F9D8F;
+    --ink:#E8ECEF; --ink-dim:#8A96A0; --line: rgba(125,216,208,0.14);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink); font-family:'Inter',sans-serif;
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  .wrap{ max-width:420px; width:100%; text-align:center; }
+  h1{ font-family:'Fraunces', serif; font-weight:600; font-size:30px; margin:0 0 6px; }
+  p.sub{ color:var(--ink-dim); font-size:13.5px; margin:0 0 36px; }
+  .links{ display:flex; flex-direction:column; gap:14px; }
+  a.tile{
+    display:block; background:var(--panel); border:1px solid var(--line);
+    border-radius:14px; padding:22px; text-decoration:none; color:var(--ink);
+    transition:all 0.2s ease;
+  }
+  a.tile:active{ border-color:var(--teal-deep); background:rgba(45,212,191,0.05); }
+  a.tile .title{ font-family:'Fraunces', serif; font-weight:600; font-size:19px; margin-bottom:4px; }
+  a.tile .desc{ font-size:12.5px; color:var(--ink-dim); }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Noir — Staff</h1>
+    <p class="sub">Select your station</p>
+    <div class="links">
+      <a class="tile" href="kitchen.html">
+        <div class="title">Kitchen</div>
+        <div class="desc">New orders → preparing → ready</div>
+      </a>
+      <a class="tile" href="floor.html">
+        <div class="title">Floor</div>
+        <div class="desc">Ready to serve → payment</div>
+      </a>
+    </div>
+  </div>
+</body>
+</html>
