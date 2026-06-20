@@ -10,6 +10,9 @@ create table orders (
   total numeric not null,
   status text not null default 'placed',  -- placed | preparing | ready | served | paid
   payment_method text,            -- null | cash | card | online
+  tip numeric default 0,          -- tip amount
+  rating integer,                 -- 1-5 star rating
+  rating_comment text,            -- optional rating comment
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

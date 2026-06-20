@@ -81,6 +81,10 @@
         <div class="title">Analytics</div>
         <div class="desc">Orders, guests, payments</div>
       </a>
+      <a class="tile" id="orders-list-link" href="orders-list.html">
+        <div class="title">Daily Orders</div>
+        <div class="desc">Complete order details table</div>
+      </a>
       <button class="tile logout-btn" id="logout-btn" type="button">Log out</button>
     </div>
   </div>
@@ -110,6 +114,7 @@ function showStationLinks(access){
   kitchenLink.classList.toggle('hidden', access.role === 'floor');
   floorLink.classList.toggle('hidden', access.role === 'kitchen');
   document.getElementById('analytics-link').classList.toggle('hidden', access.role !== 'all');
+  document.getElementById('orders-list-link').classList.toggle('hidden', access.role !== 'all');
 }
 
 function clearLogin(){

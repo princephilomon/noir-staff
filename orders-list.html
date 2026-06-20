@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Noir — Daily Orders</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0E13;
+    --panel:#141B22;
+    --teal:#2DD4BF;
+    --teal-deep:#1F9D8F;
+    --ink:#E8ECEF;
+    --ink-dim:#8A96A0;
+    --line: rgba(125,216,208,0.14);
+    --red:#E0746C;
+    --green:#4ADE80;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:'Inter', sans-serif; min-height:100vh;
+  }
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:20px 24px; border-bottom:1px solid var(--line);
+    position:sticky; top:0; background:rgba(10,14,19,0.92); backdrop-filter:blur(10px);
+    z-index:10;
+  }
+  header h1{
+    font-family:'Fraunces', serif; font-weight:600; font-size:22px; margin:0;
+  }
+  header a, header button{
+    color:var(--teal); background:transparent; border:1px solid var(--line);
+    text-decoration:none; font-size:13px; padding:8px 14px;
+    border-radius:8px; cursor:pointer; margin-left:8px;
+  }
+  main{ padding:24px; max-width:100%; }
+  
+  .table-wrap{ overflow-x:auto; }
+  table{
+    width:100%; border-collapse:collapse; background:var(--panel); border:1px solid var(--line); border-radius:12px; overflow:hidden;
+  }
+  thead{
+    background:rgba(255,255,255,0.02); border-bottom:1px solid var(--line);
+  }
+  th{
+    padding:12px 16px; text-align:left; font-size:12px; font-weight:700; color:var(--ink-dim);
+    text-transform:uppercase; letter-spacing:0.05em;
+  }
+  td{
+    padding:14px 16px; border-bottom:1px solid rgba(255,255,255,0.03); font-size:13.5px;
+  }
+  tr:last-child td{ border-bottom:none; }
+  
+  .guest-cell{ font-weight:600; color:var(--teal); }
+  .items-cell{ color:var(--ink-dim); max-width:300px; white-space:normal; }
+  .items-cell .item{ margin:2px 0; font-size:12.5px; }
+  .qty{ color:var(--teal-deep); font-weight:600; }
+  .price-cell{ text-align:right; color:var(--green); font-weight:600; }
+  .tip-cell{ text-align:right; color:var(--teal); font-weight:600; }
+  .rating-cell{ text-align:center; }
+  .stars{ color:#F2B84B; font-size:13px; }
+  .status-badge{
+    display:inline-block; padding:4px 10px; border-radius:6px; font-size:11px;
+    font-weight:700; text-transform:uppercase;
+  }
+  .status-placed{ background:rgba(242,184,75,0.2); color:#F2B84B; }
+  .status-preparing{ background:rgba(45,212,191,0.2); color:var(--teal); }
+  .status-ready{ background:rgba(31,157,143,0.2); color:var(--teal-deep); }
+  .status-served{ background:rgba(125,216,208,0.2); color:#7DD8D0; }
+  .status-paid{ background:rgba(74,222,128,0.2); color:var(--green); }
+  
+  .loading{ padding:40px; text-align:center; color:var(--ink-dim); }
+  .error{ padding:20px; background:rgba(224,116,108,0.1); border:1px solid var(--red); border-radius:10px; color:var(--red); margin:20px 0; }
+  .empty{ padding:40px; text-align:center; color:var(--ink-dim); }
+  .filters{ display:flex; gap:12px; margin-bottom:20px; align-items:center; }
+  .filters select, .filters input{
+    background:var(--panel); border:1px solid var(--line); color:var(--ink);
+    padding:8px 12px; border-radius:8px; font-size:13px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Noir — Daily Orders</h1>
+  <div>
+    <button id="refresh-btn">Refresh</button>
+    <a href="index.html">Back</a>
+  </div>
+</header>
+
+<main>
+  <div id="error-msg" class="error" style="display:none;"></div>
+  
+  <div class="filters">
+    <select id="status-filter">
+      <option value="">All Statuses</option>
+      <option value="placed">Placed</option>
+      <option value="preparing">Preparing</option>
+      <option value="ready">Ready</option>
+      <option value="served">Served</option>
+      <option value="paid">Paid</option>
+    </select>
+    <select id="payment-filter">
+      <option value="">All Payment Methods</option>
+      <option value="cash">Cash</option>
+      <option value="online">Online</option>
+      <option value="card">Card</option>
+    </select>
+  </div>
+
+  <div id="loading" class="loading">Loading orders…</div>
+  
+  <div id="content" style="display:none;">
+    <div class="table-wrap">
+      <table id="orders-table">
+        <thead>
+          <tr>
+            <th>Order #</th>
+            <th>Table</th>
+            <th>Guest Name</th>
+            <th>Items</th>
+            <th>Total</th>
+            <th>Tip</th>
+            <th>Payment</th>
+            <th>Rating</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+    <div id="empty-msg" class="empty" style="display:none;">No orders found.</div>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script src="auth.js"></script>
+<script>
+requireAccess('all');
+const isConfigured = SUPABASE_URL.startsWith('http');
+const sb = isConfigured ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+const loadingEl = document.getElementById('loading');
+const contentEl = document.getElementById('content');
+const errorEl = document.getElementById('error-msg');
+const refreshBtn = document.getElementById('refresh-btn');
+const tableBody = document.getElementById('table-body');
+const emptyMsg = document.getElementById('empty-msg');
+const statusFilter = document.getElementById('status-filter');
+const paymentFilter = document.getElementById('payment-filter');
+
+let allOrders = [];
+
+function renderTable(){
+  const statusVal = statusFilter.value;
+  const paymentVal = paymentFilter.value;
+  
+  let filtered = allOrders;
+  if (statusVal) filtered = filtered.filter(o => o.status === statusVal);
+  if (paymentVal) filtered = filtered.filter(o => o.payment_method === paymentVal);
+  
+  if (filtered.length === 0){
+    emptyMsg.style.display = 'block';
+    tableBody.innerHTML = '';
+    return;
+  }
+  
+  emptyMsg.style.display = 'none';
+  tableBody.innerHTML = filtered.map(order => {
+    const itemsHtml = (order.items || []).map(item =>
+      `<div class="item"><span class="qty">${item.qty}×</span> ${item.name}${item.variantLabel ? ` (${item.variantLabel})` : ''} — $${parseFloat(item.unitPrice || 0).toFixed(2)}</div>`
+    ).join('');
+    
+    const ratingStars = order.rating ? '★'.repeat(order.rating) : '—';
+    const tipAmount = parseFloat(order.tip || 0).toFixed(2);
+    
+    return `
+      <tr>
+        <td><strong>#${order.order_no}</strong></td>
+        <td>${order.table_number}</td>
+        <td class="guest-cell">${order.guest_name}</td>
+        <td class="items-cell">${itemsHtml}</td>
+        <td class="price-cell">$${parseFloat(order.total || 0).toFixed(2)}</td>
+        <td class="tip-cell">$${tipAmount}</td>
+        <td>${order.payment_method ? (order.payment_method.charAt(0).toUpperCase() + order.payment_method.slice(1)) : '—'}</td>
+        <td class="rating-cell">${order.rating ? `<span class="stars">${ratingStars}</span>` : '—'}</td>
+        <td><span class="status-badge status-${order.status}">${order.status}</span></td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function loadOrders(){
+  if (!sb){
+    errorEl.textContent = 'Not configured. Edit config.js.';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  try {
+    loadingEl.style.display = 'block';
+    contentEl.style.display = 'none';
+    errorEl.style.display = 'none';
+
+    const { data: orders, error } = await sb.from('orders')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    allOrders = orders || [];
+    
+    loadingEl.style.display = 'none';
+    contentEl.style.display = 'block';
+    renderTable();
+  } catch (err) {
+    console.error(err);
+    errorEl.textContent = `Error: ${err.message}`;
+    errorEl.style.display = 'block';
+    loadingEl.style.display = 'none';
+  }
+}
+
+refreshBtn.addEventListener('click', loadOrders);
+statusFilter.addEventListener('change', renderTable);
+paymentFilter.addEventListener('change', renderTable);
+
+loadOrders();
+</script>
+</body>
+</html>
